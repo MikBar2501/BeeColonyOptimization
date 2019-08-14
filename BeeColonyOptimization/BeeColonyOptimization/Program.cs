@@ -39,19 +39,30 @@ namespace BeeColonyOptimization
 
         static void Main(string[] args)
         {
-            string pathFile = @"TSP\kroA100.tsp";
-            Point[] points = TSPFileReader.ReadTspFile(pathFile);
-            Graph graph = new Graph(points);
+            Console.WriteLine("Set name of file: ");
+            string name = Console.ReadLine();
+            string nameFile = "TSP\\" + name; 
 
-            Console.WriteLine("Set count of bees: ");
-            UInt32 bees = UInt32.Parse(Console.ReadLine());
-   
-            values = new Values(bees, pathFile, "BCO");
-            values.StartTime();
-            Solve(graph, bees, graph.dimension, 3);
+            string pathFile = nameFile;
+            //try
+            //{
+                Point[] points = TSPFileReader.ReadTspFile(pathFile);
+                Graph graph = new Graph(points);
+
+                Console.WriteLine("Set count of bees: ");
+                UInt32 bees = UInt32.Parse(Console.ReadLine());
+
+                values = new Values(bees, pathFile, "BCO");
+                values.StartTime();
+                Solve(graph, bees, 10000, 3);
+
+                values.StopTime();
+                Console.WriteLine("End");
+            //} catch (FileNotFoundException e)
+            //{
+                //Console.WriteLine("File not Found " + e);
+            //}
             
-            values.StopTime();
-            Console.WriteLine("End");
 
             Console.ReadKey();
 
@@ -88,14 +99,15 @@ namespace BeeColonyOptimization
             Bee[] hive = new Bee[bees];
             for(int j = 1; j < iterations; j++)
             {
-                hive = ResetHive(hive, graph);
+                hive = ResetHive(hive, graph, iterations);
                 for (int i = 0; i < graph.dimension; i++)
                 {
                     for (int s = 0; s < steps; s++)
                     {
                         for (int b = 0; b < hive.Length; b++)
                         {
-                            if (hive[b].path.Count == graph.dimension) continue;
+                            //if (hive[b].path.Count == graph.dimension) continue;
+                            if (hive[b].path.Count == graph.dimension) break;
                             UInt32 nextPosition = ChooseNextNode(graph, hive[b]);
                             hive[b].path.Add(nextPosition);
                         }
@@ -106,10 +118,13 @@ namespace BeeColonyOptimization
                         hive[b].pathValue = graph.CalculateRouteLength(hive[b].path);
                     }
 
+                    //Paths(hive);
+                    //Console.WriteLine("-----------------------------------");
+                    //Console.WriteLine();
 
 
                     hive = Loyalty(hive);
-                    foreach(Bee bee in hive)
+                    foreach (Bee bee in hive)
                     {
                         bee.ResetNormalizeAndRecruitValue();
                     }
@@ -119,6 +134,13 @@ namespace BeeColonyOptimization
                     {
                         bee.ResetNormalizeAndRecruitValue();
                     }
+                //}
+                }
+                //Console.WriteLine("Iteration " + j.ToString());
+                //HiveRoutes(hive, graph);
+                //Paths(hive);
+                //Console.WriteLine("-----------------------------------");
+                //Console.WriteLine();
 
                     newPath = FindBestPath(hive, graph);
 
@@ -126,10 +148,10 @@ namespace BeeColonyOptimization
                     {
                         bestPathLength = newPath;
                         Console.WriteLine("New best found in iteration: " + j.ToString() + ", new best is: " + bestPathLength);
-                        //Values.toFile.Add("-New best-" + j.ToString() + "-" + bestPathLength);
+                        //Values.toFile.Add("New best-" + j.ToString() + "-" + bestPathLength);
                         Values.AddNewValues(j, bestPathLength);
                     }
-                }
+                //}
             }
         }
 
@@ -147,6 +169,28 @@ namespace BeeColonyOptimization
             for (int b = 0; b < hive.Length; b++)
             {
                 UInt32 startPosition = (UInt32)rand.Next(0, (int)graph.dimension);
+                //UInt32 startPosition = (UInt32));
+                hive[b].path.Add(startPosition);
+            }
+
+            return hive;
+        }
+
+        public static Bee[] ResetHive(Bee[] hive, Graph graph, UInt32 iterations)
+        {
+            for (int i = 0; i < hive.Length; i++)
+            {
+                hive[i].status = true;
+                hive[i].path = new List<UInt32>();
+                hive[i].pathValue = 0;
+                hive[i].normalizeValue = 0;
+                hive[i].recruitValue = 0;
+            }
+
+            for (int b = 0; b < hive.Length; b++)
+            {
+                UInt32 startPosition = (iterations % graph.dimension);
+
                 hive[b].path.Add(startPosition);
             }
 
@@ -304,6 +348,31 @@ namespace BeeColonyOptimization
 
             return recruiter.path;
 
+        }
+
+        public static void HiveRoutes(Bee [] bees, Graph graph)
+        {
+            for(int i = 0; i < bees.Length; i++)
+            {
+                Console.WriteLine("Bee " + i.ToString());
+                Console.WriteLine("Bee path " + bees[i].path.Count.ToString());
+                Console.WriteLine("Bee path Length " + graph.CalculateRouteLength(bees[i].path));
+                Console.WriteLine("------------------");
+            }
+        }
+
+        public static void Paths(Bee [] bees)
+        {
+            for (int i = 0; i < bees.Length; i++)
+            {
+                string path = "p: ";
+                foreach(UInt32 vertex in bees[i].path)
+                {
+                    path += vertex.ToString() + " ";
+                }
+                Console.WriteLine(path);
+                Console.WriteLine();
+            }
         }
         
     }

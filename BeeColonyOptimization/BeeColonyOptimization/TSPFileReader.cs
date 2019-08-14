@@ -17,7 +17,7 @@ namespace BeeColonyOptimization
             List<Point> points = new List<Point>();
 
             CultureInfo ci = (CultureInfo)CultureInfo.CurrentCulture.Clone();
-            ci.NumberFormat.CurrencyDecimalSeparator = ".";
+            ci.NumberFormat.CurrencyDecimalSeparator = ",";
             bool readData = false;
             foreach (var item in file)
             {
