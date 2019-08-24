@@ -54,7 +54,8 @@ namespace BeeColonyOptimization
 
                 values = new Values(bees, pathFile, "BCO");
                 values.StartTime();
-                Solve(graph, bees, 10000, 3);
+                //Solve(graph, bees, 1000, (UInt32)(graph.dimension * 0.6f));
+                Solve(graph, bees, 1000, 3);
 
                 values.StopTime();
                 Console.WriteLine("End");
@@ -99,15 +100,15 @@ namespace BeeColonyOptimization
             Bee[] hive = new Bee[bees];
             for(int j = 1; j < iterations; j++)
             {
-                hive = ResetHive(hive, graph, iterations);
+                hive = ResetHive(hive, graph);
                 for (int i = 0; i < graph.dimension; i++)
                 {
                     for (int s = 0; s < steps; s++)
                     {
                         for (int b = 0; b < hive.Length; b++)
                         {
-                            //if (hive[b].path.Count == graph.dimension) continue;
-                            if (hive[b].path.Count == graph.dimension) break;
+                            if (hive[b].path.Count == graph.dimension) continue;
+                            //if (hive[b].path.Count == graph.dimension) break;
                             UInt32 nextPosition = ChooseNextNode(graph, hive[b]);
                             hive[b].path.Add(nextPosition);
                         }
@@ -124,6 +125,10 @@ namespace BeeColonyOptimization
 
 
                     hive = Loyalty(hive);
+                    if(UnemployedHive(hive))
+                    {
+                        hive[FoundBestPath(hive, graph)].status = true;
+                    }
                     foreach (Bee bee in hive)
                     {
                         bee.ResetNormalizeAndRecruitValue();
@@ -233,13 +238,13 @@ namespace BeeColonyOptimization
             //a + (x-A)(b-a)/(B-A)
             IEnumerable<Bee> sortedBees = from bee in bees orderby bee.pathValue select bee;
             bees = sortedBees.ToArray();
-            double maxValue = bees[bees.Length - 1].pathValue;
-            double minValue = bees[0].pathValue;
+            double maxValue = bees[0].pathValue;
+            double minValue = bees[bees.Length - 1].pathValue;
 
-            bees[0].normalizeValue = 0;
-            bees[bees.Length-1].normalizeValue = 1;
+            bees[bees.Length - 1].normalizeValue = 0;
+            bees[0].normalizeValue = 1;
 
-            for(int i = 1; i < bees.Length-1; i++)
+            for(int i = 0; i < bees.Length; i++)
             {
                 bees[i].normalizeValue = NormalizeValue(minValue, maxValue, 0, 1, bees[i].pathValue);
             }
@@ -247,13 +252,16 @@ namespace BeeColonyOptimization
 
             for(int i = 0; i < bees.Length; i++)
             {
+                double l = rand.NextDouble();
                 double loyalty = Math.Pow(Math.E, -(1 - bees[i].normalizeValue));
-                if (loyalty < 0.7)
+                if (loyalty < l)
                 {
                     bees[i].status = false;
                 }
                 
             }
+
+            
 
             return bees;
 
@@ -261,7 +269,8 @@ namespace BeeColonyOptimization
 
         public static double NormalizeValue(double minValue, double maxValue, double normalizeMin, double normalizeMax, double value)
         {
-            return normalizeMin + (((value + minValue) * (normalizeMax - normalizeMin)) / (maxValue - minValue));
+            //return normalizeMin + (((value + minValue) * (normalizeMax - normalizeMin)) / (maxValue - minValue));
+            return (maxValue - value) / (maxValue - minValue);
         }
 
         public static Bee [] Recruit(Bee [] bees)
@@ -317,15 +326,24 @@ namespace BeeColonyOptimization
 
         public static List<UInt32> ChooseRecruiter(Bee[] bees)
         {
+            //Random rand1 = new Random();
             double choose = rand.NextDouble();
             bool find = false;
             Bee recruiter = new Bee();
             //int i = 1;
 
             
-            for(int i = 0; i < bees.Length - 1; i++)
+            for(int i = 0; i < bees.Length; i++)
             {
-                if(bees[i].recruitValue < choose && bees[i + 1].recruitValue > choose && !find)
+                double cumulateRecruitValue = bees[0].recruitValue;
+                for(int j = 1; j <= i; j++)
+                {
+                    cumulateRecruitValue += bees[j].recruitValue;
+                }
+
+
+                //if(bees[i].recruitValue < choose && i+1!= bees.Length && bees[i + 1].recruitValue > choose && !find)
+                if(cumulateRecruitValue < choose && i+1!= bees.Length && bees[i + 1].recruitValue > choose && !find)
                 {
                     double valueBetween = (bees[i].recruitValue + bees[i+1].recruitValue) / 2;
                     if (choose >= valueBetween)
@@ -346,7 +364,8 @@ namespace BeeColonyOptimization
             }
 
 
-            return recruiter.path;
+            //return recruiter.path;
+            return new List<UInt32>(recruiter.path);
 
         }
 
@@ -373,6 +392,38 @@ namespace BeeColonyOptimization
                 Console.WriteLine(path);
                 Console.WriteLine();
             }
+        }
+
+        public static bool UnemployedHive(Bee [] bees)
+        {
+            //bool everyBeesIsUneployed = true;
+            for(int i = 0; i < bees.Length; i++)
+            {
+                if(bees[i].status == true)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public static int FoundBestPath(Bee [] bees, Graph graph)
+        {
+            int bestBee = 0;
+            double bestPath = graph.CalculateRouteLength(bees[bestBee].path);
+            for (int i = 1; i < bees.Length; i++)
+            {
+                double beePath = graph.CalculateRouteLength(bees[i].path);
+                if(beePath < bestPath)
+                {
+                    bestBee = i;
+                    bestPath = beePath;
+                }
+            }
+
+            return bestBee;
+
+
         }
         
     }
