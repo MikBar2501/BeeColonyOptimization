@@ -54,8 +54,8 @@ namespace BeeColonyOptimization
 
                 values = new Values(bees, pathFile, "BCO");
                 values.StartTime();
-                //Solve(graph, bees, 1000, (UInt32)(graph.dimension * 0.6f));
-                Solve(graph, bees, 1000, 3);
+                Solve(graph, bees, 10000, (UInt32)(graph.dimension * 0.9f));
+                //Solve(graph, bees, 10000, 3);
 
                 values.StopTime();
                 Console.WriteLine("End");
@@ -141,11 +141,11 @@ namespace BeeColonyOptimization
                     }
                 //}
                 }
-                //Console.WriteLine("Iteration " + j.ToString());
-                //HiveRoutes(hive, graph);
+                Console.WriteLine("Iteration " + j.ToString());
+                HiveRoutes(hive, graph);
                 //Paths(hive);
-                //Console.WriteLine("-----------------------------------");
-                //Console.WriteLine();
+                Console.WriteLine("-----------------------------------");
+                Console.WriteLine();
 
                     newPath = FindBestPath(hive, graph);
 
@@ -236,15 +236,22 @@ namespace BeeColonyOptimization
 
             // wartość min = A, wartość max = B, znormalizowana min = a -> 0, znormalizowana max = b -> 1, x = warość
             //a + (x-A)(b-a)/(B-A)
+            /*for(int i = 0; i < bees.Length; i++)
+            {
+                bees[i].status = false;
+            }*/
             IEnumerable<Bee> sortedBees = from bee in bees orderby bee.pathValue select bee;
             bees = sortedBees.ToArray();
-            double maxValue = bees[0].pathValue;
-            double minValue = bees[bees.Length - 1].pathValue;
+            double maxValue = bees[bees.Length - 1].pathValue;
+            double minValue = bees[0].pathValue;
 
-            bees[bees.Length - 1].normalizeValue = 0;
-            bees[0].normalizeValue = 1;
+            //double maxValue = bees[0].pathValue;
+            //double minValue = bees[bees.Length - 1].pathValue;
 
-            for(int i = 0; i < bees.Length; i++)
+            //bees[bees.Length - 1].normalizeValue = 0;
+            //bees[0].normalizeValue = 1;
+
+            for (int i = 0; i < bees.Length; i++)
             {
                 bees[i].normalizeValue = NormalizeValue(minValue, maxValue, 0, 1, bees[i].pathValue);
             }
@@ -254,14 +261,12 @@ namespace BeeColonyOptimization
             {
                 double l = rand.NextDouble();
                 double loyalty = Math.Pow(Math.E, -(1 - bees[i].normalizeValue));
-                if (loyalty < l)
+                if (l > loyalty)
                 {
                     bees[i].status = false;
                 }
                 
             }
-
-            
 
             return bees;
 
@@ -290,6 +295,10 @@ namespace BeeColonyOptimization
 
             IEnumerable<Bee> sortedBees = from bee in recruiters orderby bee.pathValue select bee;
             Bee [] recruitersArray = sortedBees.ToArray();
+            //Console.WriteLine("----------------------------");
+            //Console.WriteLine(recruitersArray.Length);
+            recruitersArray = BestRecruiters(recruitersArray);
+            //Console.WriteLine(recruitersArray.Length);
             Bee[] uneployedArray = unemployed.ToArray();
             double maxValue = recruitersArray[recruitersArray.Length - 1].pathValue;
             double minValue = recruitersArray[0].pathValue;
@@ -305,6 +314,7 @@ namespace BeeColonyOptimization
             for (int i = 0; i < recruitersArray.Length; i++)
             {
                 recruitersArray[i].recruitValue = recruitersArray[i].normalizeValue / sumValues;
+                recruitersArray[i].recruitValue = recruitersArray[i].normalizeValue;
             }
 
             IEnumerable<Bee> sortedRecruiterBees = from bee in recruitersArray orderby bee.pathValue select bee;
@@ -425,7 +435,25 @@ namespace BeeColonyOptimization
 
 
         }
-        
+
+        public static Bee [] BestRecruiters(Bee [] bees)
+        {
+            int recruitersCount = (int)(bees.Length * 0.25f);
+            if(recruitersCount < 1)
+            {
+                recruitersCount = 1;
+            }
+
+            Bee[] bestRecruiters = new Bee[recruitersCount];
+            for(int i = 0; i < recruitersCount; i++)
+            {
+                bestRecruiters[i] = bees[i];
+            }
+
+            return bestRecruiters;
+        }
+
+
     }
 }
 
