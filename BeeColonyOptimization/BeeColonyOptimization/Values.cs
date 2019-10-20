@@ -83,6 +83,11 @@ namespace BeeColonyOptimization
         }
 
 
+        public static void AddValues(int iteration, double value)
+        {
+            toFile.Add("-New path-" + iteration + "-" + value);
+        }
+
 
 
     }

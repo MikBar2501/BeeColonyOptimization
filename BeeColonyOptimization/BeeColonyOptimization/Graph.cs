@@ -20,7 +20,7 @@ namespace BeeColonyOptimization
         }
     }
 
-    class Graph
+    public class Graph
     {
         public UInt32 dimension;
         public bool isSymetric;
